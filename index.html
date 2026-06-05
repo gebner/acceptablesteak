@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delta-T Sous Vide Calculator</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+}
+.container {
+  max-width: 900px;
+  width: 100%;
+  background: #16213e;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+h1 {
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+  color: #fff;
+}
+.subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 20px;
+}
+.presets {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.presets button {
+  padding: 8px 18px;
+  border: 1px solid #4a90d9;
+  background: transparent;
+  color: #4a90d9;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.presets button:hover, .presets button.active {
+  background: #4a90d9;
+  color: #fff;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.input-group label {
+  font-size: 0.78rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.input-row input {
+  flex: 1;
+  min-width: 0;
+}
+.input-row .unit {
+  font-size: 0.75rem;
+  color: #888;
+  width: 28px;
+  text-align: center;
+}
+input[type="number"] {
+  background: #0f3460;
+  border: 1px solid #2a4a7f;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 0.95rem;
+  width: 100%;
+}
+input[type="number"]:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+.actions-panel {
+  background: #0f3460;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.actions-panel h2 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: #4a90d9;
+}
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #1a2a4a;
+}
+.action-item:last-child { border-bottom: none; }
+.action-time {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  min-width: 70px;
+}
+.action-desc {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+.action-icon {
+  font-size: 1.4rem;
+  min-width: 30px;
+  text-align: center;
+}
+.chart-container {
+  background: #0f3460;
+  border-radius: 12px;
+  padding: 16px;
+  overflow: hidden;
+}
+canvas {
+  width: 100%;
+  height: 220px;
+  display: block;
+}
+.toggle-advanced {
+  text-align: center;
+  margin-top: 16px;
+}
+.toggle-advanced button {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+.advanced { display: none; margin-top: 16px; }
+.advanced.show { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🥩 Delta-T Sous Vide Calculator</h1>
+  <p class="subtitle">Manual delta-T method: start hot, drop temperature, pull on time</p>
+
+  <div class="presets">
+    <button onclick="applyPreset('beef_steak')">🥩 Beef Steak (Medium-Rare)</button>
+    <button onclick="applyPreset('beef_roast')">🥩 Beef Roast</button>
+    <button onclick="applyPreset('salmon')">🐟 Salmon</button>
+    <button onclick="applyPreset('chicken')">🍗 Chicken Breast</button>
+  </div>
+
+  <div class="grid">
+    <div class="input-group">
+      <label>Target Temperature</label>
+      <div class="input-row">
+        <input type="number" id="t_target_c" step="0.5" value="54">
+        <span class="unit">°C</span>
+        <input type="number" id="t_target_f" step="1" value="129">
+        <span class="unit">°F</span>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Initial Food Temperature</label>
+      <div class="input-row">
+        <input type="number" id="t_init_c" step="1" value="5">
+        <span class="unit">°C</span>
+        <input type="number" id="t_init_f" step="1" value="41">
+        <span class="unit">°F</span>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Thickness (mm)</label>
+      <input type="number" id="thickness" step="1" value="25" min="1" max="100">
+    </div>
+    <div class="input-group">
+      <label>Delta-T (°C above target)</label>
+      <div class="input-row">
+        <input type="number" id="delta_t_c" step="0.5" value="5" min="0" max="20">
+        <span class="unit">°C</span>
+        <input type="number" id="delta_t_f" step="1" value="9" min="0" max="36">
+        <span class="unit">°F</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions-panel">
+    <h2>⏱ Actions</h2>
+    <div id="actions-list">
+      <div class="action-item">
+        <span class="action-icon">⏳</span>
+        <span class="action-desc">Computing...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="toggle-advanced">
+    <button onclick="document.querySelector('.advanced').classList.toggle('show')">▼ Advanced Parameters</button>
+  </div>
+  <div class="advanced">
+    <div class="grid">
+      <div class="input-group">
+        <label>Cooling speed (K/min)</label>
+        <input type="number" id="cooldown_per_min" step="0.05" value="0.5">
+      </div>
+      <div class="input-group">
+        <label>Heating speed (K/min)</label>
+        <input type="number" id="heatup_per_min" step="0.05" value="2.5">
+      </div>
+      <div class="input-group">
+        <label>Thermal diffusivity (×10⁻⁷ m²/s)</label>
+        <input type="number" id="alpha_" step="0.05" value="1.4">
+      </div>
+      <div class="input-group">
+        <label>h (heat transfer coeff)</label>
+        <input type="number" id="h_param" step="5" value="95">
+      </div>
+      <div class="input-group">
+        <label>k (thermal conductivity)</label>
+        <input type="number" id="k_param" step="0.05" value="0.5">
+      </div>
+      <div class="input-group">
+        <label>β (geometry factor, 0=slab)</label>
+        <input type="number" id="beta" step="0.1" value="0">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Presets ---
+const PRESETS = {
+  beef_steak: { t_target: 54, t_init: 5, thickness: 30, delta_t: 5, label: 'Beef Steak (Medium-Rare)' },
+  beef_roast: { t_target: 54, t_init: 5, thickness: 60, delta_t: 5, label: 'Beef Roast' },
+  salmon: { t_target: 46, t_init: 5, thickness: 25, delta_t: 5, label: 'Salmon' },
+  chicken: { t_target: 64, t_init: 5, thickness: 25, delta_t: 5, label: 'Chicken Breast' },
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  document.getElementById('t_target_c').value = p.t_target;
+  document.getElementById('t_init_c').value = p.t_init;
+  document.getElementById('thickness').value = p.thickness;
+  document.getElementById('delta_t_c').value = p.delta_t;
+  syncFromC('t_target');
+  syncFromC('t_init');
+  syncFromC('delta_t');
+  recompute();
+  // highlight active
+  document.querySelectorAll('.presets button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// --- C/F sync ---
+function cToF(c) { return c * 9/5 + 32; }
+function fToC(f) { return (f - 32) * 5/9; }
+
+function syncFromC(prefix) {
+  const c = parseFloat(document.getElementById(prefix + '_c').value);
+  document.getElementById(prefix + '_f').value = Math.round(cToF(c) * 10) / 10;
+}
+function syncFromF(prefix) {
+  const f = parseFloat(document.getElementById(prefix + '_f').value);
+  document.getElementById(prefix + '_c').value = Math.round(fToC(f) * 10) / 10;
+}
+
+['t_target', 't_init', 'delta_t'].forEach(prefix => {
+  document.getElementById(prefix + '_c').addEventListener('input', () => { syncFromC(prefix); recompute(); });
+  document.getElementById(prefix + '_f').addEventListener('input', () => { syncFromF(prefix); recompute(); });
+});
+['thickness', 'cooldown_per_min', 'heatup_per_min', 'alpha_', 'h_param', 'k_param', 'beta'].forEach(id => {
+  document.getElementById(id).addEventListener('input', recompute);
+});
+
+// --- Simulation (extracted from Observable notebook) ---
+function simulate_all() {
+  const thickness = parseFloat(document.getElementById('thickness').value);
+  const t_target = parseFloat(document.getElementById('t_target_c').value);
+  const delta_t = parseFloat(document.getElementById('delta_t_c').value);
+  const t_init = parseFloat(document.getElementById('t_init_c').value);
+  const cooldown_per_min = parseFloat(document.getElementById('cooldown_per_min').value);
+  const heatup_per_min = parseFloat(document.getElementById('heatup_per_min').value);
+  const alpha_ = parseFloat(document.getElementById('alpha_').value);
+  const h = parseFloat(document.getElementById('h_param').value);
+  const k = parseFloat(document.getElementById('k_param').value);
+  const beta = parseFloat(document.getElementById('beta').value);
+
+  const alpha = alpha_ * 1e-7;
+  const heatup = heatup_per_min / 60;
+  const cooldown = cooldown_per_min / 60;
+  const r = thickness * 0.5e-3;
+  const N = Math.floor(r * 1e3);
+  const dx = r / N;
+  const init_water_temp = t_target + delta_t;
+
+  function fixup(next, t_water) {
+    next[2] = next[3];
+    next[next.length - 1] = next[next.length - 2] + dx * ((h / k) * (t_water - next[next.length - 2]));
+  }
+
+  function step(cur, set_temp) {
+    const dt = 0.5 * dx * dx / alpha;
+    let t_water = cur[1];
+    if (set_temp < t_water) t_water = Math.max(set_temp, t_water - dt * cooldown);
+    else if (set_temp > t_water) t_water = Math.min(set_temp, t_water + dt * heatup);
+
+    const next = new Float64Array(cur.length);
+    next[0] = cur[0] + dt;
+    next[1] = t_water;
+    for (let i = 3; i < cur.length - 1; i++) {
+      const u_xx = (cur[i + 1] + cur[i - 1] - 2 * cur[i]) / (dx * dx);
+      const u_x = (cur[i + 1] - cur[i - 1]) / (2 * dx);
+      const x = (i - 3) * dx;
+      const u_t = alpha * (u_xx + beta / (x + 1e-3) * u_x);
+      next[i] = cur[i] + dt * u_t;
+    }
+    fixup(next, t_water);
+    return next;
+  }
+
+  // Initialize
+  const cur = new Float64Array(2 + (N + 2));
+  cur[0] = 0;
+  cur[1] = init_water_temp;
+  for (let i = 3; i < cur.length - 1; i++) cur[i] = t_init;
+  fixup(cur, init_water_temp);
+
+  function sim_run(result, set_temp, stopIfMidTooHigh) {
+    let t_finished = result[result.length - 1][0];
+    while (result[result.length - 1][0] < t_finished + 1000) {
+      const c = result[result.length - 1];
+      const next = step(c, set_temp);
+      if (next[2] < t_target - 0.5) t_finished = next[0];
+      result.push(next);
+      if (stopIfMidTooHigh && next[2 + Math.floor(N / 2)] > t_target) break;
+    }
+  }
+
+  function whereMidTooHot(results) {
+    return results.findIndex(res => res[2 + Math.floor(N / 2)] > t_target);
+  }
+
+  const first_sim = [cur];
+  sim_run(first_sim, init_water_temp, true);
+
+  let a = 1, b = whereMidTooHot(first_sim);
+  if (b === -1) {
+    // no drop needed, just run to completion
+    const final_sim = [cur];
+    sim_run(final_sim, init_water_temp, false);
+    return { sim: final_sim, N, t_target };
+  }
+
+  while (b - a > 2 && first_sim[b][0] - first_sim[a][0] > 10) {
+    const c = Math.floor((a + b) / 2);
+    const next_sim = first_sim.slice(0, c);
+    sim_run(next_sim, t_target, true);
+    if (whereMidTooHot(next_sim) === -1) a = c;
+    else b = c;
+  }
+
+  const final_sim = first_sim.slice(0, a);
+  sim_run(final_sim, t_target, true);
+  return { sim: final_sim, N, t_target };
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function recompute() {
+  const { sim, N, t_target } = simulate_all();
+
+  // Find drop index (where water temp starts decreasing)
+  let dropIdx = sim.length;
+  let maxWater = 0;
+  for (let i = 0; i < sim.length; i++) {
+    if (sim[i][1] < maxWater) { dropIdx = i; break; }
+    maxWater = sim[i][1];
+  }
+
+  // Find ready index (surface reaches target)
+  let readyIdx = sim.length - 1;
+  for (let i = 0; i < sim.length; i++) {
+    if (sim[i][2] > t_target - 0.5) { readyIdx = i; break; }
+  }
+
+  const dropTime = sim[dropIdx] ? sim[dropIdx][0] : 0;
+  const readyTime = sim[readyIdx][0];
+  const init_water_temp = parseFloat(document.getElementById('t_target_c').value) + parseFloat(document.getElementById('delta_t_c').value);
+  const target_temp = parseFloat(document.getElementById('t_target_c').value);
+
+  // Build actions
+  const actionsEl = document.getElementById('actions-list');
+  let html = '';
+  html += `<div class="action-item">
+    <span class="action-icon">🔥</span>
+    <span class="action-time">0:00</span>
+    <span class="action-desc">Set water to <strong>${init_water_temp.toFixed(1)}°C / ${cToF(init_water_temp).toFixed(0)}°F</strong> and submerge food</span>
+  </div>`;
+
+  if (dropIdx < readyIdx && dropIdx < sim.length) {
+    html += `<div class="action-item">
+      <span class="action-icon">⬇️</span>
+      <span class="action-time">${formatTime(dropTime)}</span>
+      <span class="action-desc">Drop temperature to <strong>${target_temp.toFixed(1)}°C / ${cToF(target_temp).toFixed(0)}°F</strong></span>
+    </div>`;
+  }
+
+  html += `<div class="action-item">
+    <span class="action-icon">✅</span>
+    <span class="action-time">${formatTime(readyTime)}</span>
+    <span class="action-desc">Pull food — it's done! (core at ${t_target.toFixed(1)}°C / ${cToF(t_target).toFixed(0)}°F)</span>
+  </div>`;
+
+  actionsEl.innerHTML = html;
+
+  // Draw chart
+  drawChart(sim, N, t_target, dropIdx, readyIdx);
+}
+
+function drawChart(sim, N, t_target, dropIdx, readyIdx) {
+  const canvas = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  // Downsample for performance
+  const step = Math.max(1, Math.floor(sim.length / 500));
+  const data = [];
+  for (let i = 0; i < sim.length; i += step) data.push(sim[i]);
+
+  const maxTime = data[data.length - 1][0] / 60;
+  let minT = Infinity, maxT = -Infinity;
+  for (const s of data) {
+    minT = Math.min(minT, s[2], s[2 + Math.floor(N / 2)], s[1]);
+    maxT = Math.max(maxT, s[2], s[2 + Math.floor(N / 2)], s[1]);
+  }
+  minT -= 2; maxT += 2;
+
+  const pad = { l: 45, r: 15, t: 15, b: 30 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  function tx(t) { return pad.l + (t / maxTime) * pw; }
+  function ty(temp) { return pad.t + (1 - (temp - minT) / (maxT - minT)) * ph; }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#1a2a4a';
+  ctx.lineWidth = 0.5;
+  for (let t = 0; t <= maxTime; t += Math.ceil(maxTime / 5)) {
+    ctx.beginPath(); ctx.moveTo(tx(t), pad.t); ctx.lineTo(tx(t), H - pad.b); ctx.stroke();
+  }
+
+  // Target line
+  ctx.strokeStyle = '#4a90d9';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(pad.l, ty(t_target)); ctx.lineTo(W - pad.r, ty(t_target)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Water temp
+  ctx.strokeStyle = '#ff6b6b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < data.length; i++) {
+    const x = tx(data[i][0] / 60), y = ty(data[i][1]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Surface temp
+  ctx.strokeStyle = '#ffd93d';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < data.length; i++) {
+    const x = tx(data[i][0] / 60), y = ty(data[i][2]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Core temp
+  ctx.strokeStyle = '#6bcb77';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < data.length; i++) {
+    const x = tx(data[i][0] / 60), y = ty(data[i][2 + Math.floor(N / 2)]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#888';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  for (let t = 0; t <= maxTime; t += Math.ceil(maxTime / 5)) {
+    ctx.fillText(Math.round(t) + 'm', tx(t), H - 8);
+  }
+  ctx.textAlign = 'right';
+  const tempStep = Math.ceil((maxT - minT) / 5);
+  for (let t = Math.ceil(minT); t <= maxT; t += tempStep) {
+    ctx.fillText(t + '°', pad.l - 5, ty(t) + 4);
+  }
+
+  // Legend
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'left';
+  const lx = pad.l + 8, ly = pad.t + 14;
+  ctx.fillStyle = '#ff6b6b'; ctx.fillText('● Water', lx, ly);
+  ctx.fillStyle = '#ffd93d'; ctx.fillText('● Surface', lx + 55, ly);
+  ctx.fillStyle = '#6bcb77'; ctx.fillText('● Core', lx + 120, ly);
+  ctx.fillStyle = '#4a90d9'; ctx.fillText('┈ Target', lx + 170, ly);
+}
+
+// Initial sync and compute
+syncFromC('t_target');
+syncFromC('t_init');
+syncFromC('delta_t');
+recompute();
+
+// Resize handler
+window.addEventListener('resize', recompute);
+</script>
+</body>
+</html>
