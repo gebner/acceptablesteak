@@ -429,6 +429,8 @@ function recompute() {
   const init_water_temp = parseFloat(document.getElementById('t_target_c').value) + parseFloat(document.getElementById('delta_t_c').value);
   const target_temp = parseFloat(document.getElementById('t_target_c').value);
 
+  const coreTemp = sim[readyIdx][2];
+
   // Build actions
   const actionsEl = document.getElementById('actions-list');
   let html = '';
@@ -449,7 +451,7 @@ function recompute() {
   html += `<div class="action-item">
     <span class="action-icon">✅</span>
     <span class="action-time">${formatTime(readyTime)}</span>
-    <span class="action-desc">Pull food — it's done! (core at ${t_target.toFixed(1)}°C / ${cToF(t_target).toFixed(0)}°F)</span>
+    <span class="action-desc">Pull food — it's done! (core at ${coreTemp.toFixed(1)}°C / ${cToF(coreTemp).toFixed(0)}°F)</span>
   </div>`;
 
   actionsEl.innerHTML = html;
