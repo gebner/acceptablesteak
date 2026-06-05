@@ -142,6 +142,15 @@ input[type="number"]:focus {
   min-width: 30px;
   text-align: center;
 }
+#danger-warning {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 0.85rem;
+}
 .chart-container {
   background: #fafafa;
   border: 1px solid #e5e7eb;
@@ -224,6 +233,7 @@ canvas {
         <span class="action-desc">Computing...</span>
       </div>
     </div>
+    <div id="danger-warning" style="display:none"></div>
   </div>
 
   <div class="chart-container">
@@ -463,6 +473,26 @@ function recompute() {
   </div>`;
 
   actionsEl.innerHTML = html;
+
+  // Danger zone warning: core between 4-54°C for > 2 hours
+  const DANGER_LOW = 4, DANGER_HIGH = 54, MAX_DANGER_SEC = 2 * 3600;
+  let dangerSeconds = 0;
+  const prevTime = sim[0][0];
+  for (let i = 1; i < sim.length && i <= readyIdx; i++) {
+    const coreT = sim[i][2]; // core = index 2
+    const dt = sim[i][0] - sim[i-1][0];
+    if (coreT > DANGER_LOW && coreT < DANGER_HIGH) {
+      dangerSeconds += dt;
+    }
+  }
+  const warningEl = document.getElementById('danger-warning');
+  if (dangerSeconds > MAX_DANGER_SEC) {
+    const mins = Math.round(dangerSeconds / 60);
+    warningEl.innerHTML = `⚠️ <strong>Food safety warning:</strong> Core stays in the danger zone (4–54°C / 40–130°F) for ~${mins} minutes (>${Math.round(MAX_DANGER_SEC/60)} min recommended max).`;
+    warningEl.style.display = 'block';
+  } else {
+    warningEl.style.display = 'none';
+  }
 
   // Draw chart
   drawChart(sim, N, t_target, dropIdx, readyIdx);
