@@ -418,10 +418,10 @@ function recompute() {
     maxWater = sim[i][1];
   }
 
-  // Find ready index (surface reaches target)
+  // Find ready index (core reaches target)
   let readyIdx = sim.length - 1;
   for (let i = 0; i < sim.length; i++) {
-    if (sim[i][2] > t_target - 0.5) { readyIdx = i; break; }
+    if (sim[i][sim[i].length - 2] > t_target - 0.5) { readyIdx = i; break; }
   }
 
   const dropTime = sim[dropIdx] ? sim[dropIdx][0] : 0;
@@ -476,8 +476,8 @@ function drawChart(sim, N, t_target, dropIdx, readyIdx) {
   const maxTime = data[data.length - 1][0] / 60;
   let minT = Infinity, maxT = -Infinity;
   for (const s of data) {
-    minT = Math.min(minT, s[2], s[2 + Math.floor(N / 2)], s[1]);
-    maxT = Math.max(maxT, s[2], s[2 + Math.floor(N / 2)], s[1]);
+    minT = Math.min(minT, s[2], s[s.length - 2], s[1]);
+    maxT = Math.max(maxT, s[2], s[s.length - 2], s[1]);
   }
   minT -= 2; maxT += 2;
 
@@ -522,12 +522,12 @@ function drawChart(sim, N, t_target, dropIdx, readyIdx) {
   }
   ctx.stroke();
 
-  // Core temp
+  // Core temp (last interior node)
   ctx.strokeStyle = '#16a34a';
   ctx.lineWidth = 2;
   ctx.beginPath();
   for (let i = 0; i < data.length; i++) {
-    const x = tx(data[i][0] / 60), y = ty(data[i][2 + Math.floor(N / 2)]);
+    const x = tx(data[i][0] / 60), y = ty(data[i][data[i].length - 2]);
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
   ctx.stroke();
