@@ -177,9 +177,9 @@ canvas {
   <p class="subtitle">Manual delta-T method: start hot, drop temperature, pull on time</p>
 
   <div class="presets">
-    <button onclick="applyPreset('beef_steak')">🥩 Beef Steak (Medium-Rare)</button>
-    <button onclick="applyPreset('salmon')">🐟 Salmon</button>
-    <button onclick="applyPreset('chicken')">🍗 Chicken Breast</button>
+    <button onclick="applyPreset('beef_steak', this)">🥩 Beef Steak (Medium-Rare)</button>
+    <button onclick="applyPreset('salmon', this)">🐟 Salmon</button>
+    <button onclick="applyPreset('chicken', this)">🍗 Chicken Breast</button>
   </div>
 
   <div class="grid">
@@ -271,7 +271,7 @@ const PRESETS = {
   chicken: { t_target: 61, t_init: 5, thickness: 25, delta_t: 1, label: 'Chicken Breast' },
 };
 
-function applyPreset(name) {
+function applyPreset(name, btn) {
   const p = PRESETS[name];
   document.getElementById('t_target_c').value = p.t_target;
   document.getElementById('t_init_c').value = p.t_init;
@@ -283,20 +283,30 @@ function applyPreset(name) {
   recompute();
   // highlight active
   document.querySelectorAll('.presets button').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 // --- C/F sync ---
 function cToF(c) { return c * 9/5 + 32; }
 function fToC(f) { return (f - 32) * 5/9; }
+function cDeltaToF(c) { return c * 9/5; }
+function fDeltaToC(f) { return f * 5/9; }
 
 function syncFromC(prefix) {
   const c = parseFloat(document.getElementById(prefix + '_c').value);
-  document.getElementById(prefix + '_f').value = Math.round(cToF(c) * 10) / 10;
+  if (prefix === 'delta_t') {
+    document.getElementById(prefix + '_f').value = Math.round(cDeltaToF(c) * 10) / 10;
+  } else {
+    document.getElementById(prefix + '_f').value = Math.round(cToF(c) * 10) / 10;
+  }
 }
 function syncFromF(prefix) {
   const f = parseFloat(document.getElementById(prefix + '_f').value);
-  document.getElementById(prefix + '_c').value = Math.round(fToC(f) * 10) / 10;
+  if (prefix === 'delta_t') {
+    document.getElementById(prefix + '_c').value = Math.round(fDeltaToC(f) * 10) / 10;
+  } else {
+    document.getElementById(prefix + '_c').value = Math.round(fToC(f) * 10) / 10;
+  }
 }
 
 ['t_target', 't_init', 'delta_t'].forEach(prefix => {
@@ -566,11 +576,9 @@ function drawChart(sim, N, t_target, dropIdx, readyIdx) {
   ctx.fillStyle = '#2563eb'; ctx.fillText('┈ Target', lx + 235, ly);
 }
 
-// Initial sync and compute
-syncFromC('t_target');
-syncFromC('t_init');
-syncFromC('delta_t');
-recompute();
+// Initial: apply beef steak preset and mark button active
+applyPreset('beef_steak');
+document.querySelector('.presets button').classList.add('active');
 
 // Resize handler
 window.addEventListener('resize', recompute);
