@@ -512,22 +512,32 @@ function drawChart(sim, N, t_target, dropIdx, readyIdx) {
   }
   ctx.stroke();
 
-  // Surface temp
+  // Surface temp (last interior node, in contact with water)
   ctx.strokeStyle = '#d97706';
   ctx.lineWidth = 2;
   ctx.beginPath();
   for (let i = 0; i < data.length; i++) {
-    const x = tx(data[i][0] / 60), y = ty(data[i][2]);
+    const x = tx(data[i][0] / 60), y = ty(data[i][data[i].length - 2]);
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
   ctx.stroke();
 
-  // Core temp (last interior node)
+  // Quarter-depth temp
+  ctx.strokeStyle = '#7c3aed';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < data.length; i++) {
+    const x = tx(data[i][0] / 60), y = ty(data[i][2 + Math.floor(N / 2)]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Core temp (index 2, symmetry boundary)
   ctx.strokeStyle = '#16a34a';
   ctx.lineWidth = 2;
   ctx.beginPath();
   for (let i = 0; i < data.length; i++) {
-    const x = tx(data[i][0] / 60), y = ty(data[i][data[i].length - 2]);
+    const x = tx(data[i][0] / 60), y = ty(data[i][2]);
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
   ctx.stroke();
@@ -551,8 +561,9 @@ function drawChart(sim, N, t_target, dropIdx, readyIdx) {
   const lx = pad.l + 8, ly = pad.t + 14;
   ctx.fillStyle = '#dc2626'; ctx.fillText('● Water', lx, ly);
   ctx.fillStyle = '#d97706'; ctx.fillText('● Surface', lx + 55, ly);
-  ctx.fillStyle = '#16a34a'; ctx.fillText('● Core', lx + 120, ly);
-  ctx.fillStyle = '#2563eb'; ctx.fillText('┈ Target', lx + 170, ly);
+  ctx.fillStyle = '#7c3aed'; ctx.fillText('● ¼-depth', lx + 120, ly);
+  ctx.fillStyle = '#16a34a'; ctx.fillText('● Core', lx + 185, ly);
+  ctx.fillStyle = '#2563eb'; ctx.fillText('┈ Target', lx + 235, ly);
 }
 
 // Initial sync and compute
