@@ -418,10 +418,10 @@ function recompute() {
     maxWater = sim[i][1];
   }
 
-  // Find ready index (core reaches target)
+  // Find ready index (quarter-depth reaches target)
   let readyIdx = sim.length - 1;
   for (let i = 0; i < sim.length; i++) {
-    if (sim[i][sim[i].length - 2] > t_target - 0.5) { readyIdx = i; break; }
+    if (sim[i][2 + Math.floor(N / 2)] > t_target - 0.5) { readyIdx = i; break; }
   }
 
   const dropTime = sim[dropIdx] ? sim[dropIdx][0] : 0;
