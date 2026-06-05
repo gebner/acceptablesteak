@@ -178,7 +178,6 @@ canvas {
 
   <div class="presets">
     <button onclick="applyPreset('beef_steak')">🥩 Beef Steak (Medium-Rare)</button>
-    <button onclick="applyPreset('beef_roast')">🥩 Beef Roast</button>
     <button onclick="applyPreset('salmon')">🐟 Salmon</button>
     <button onclick="applyPreset('chicken')">🍗 Chicken Breast</button>
   </div>
@@ -267,10 +266,9 @@ canvas {
 <script>
 // --- Presets ---
 const PRESETS = {
-  beef_steak: { t_target: 54, t_init: 5, thickness: 30, delta_t: 1, label: 'Beef Steak (Medium-Rare)' },
-  beef_roast: { t_target: 54, t_init: 5, thickness: 60, delta_t: 1, label: 'Beef Roast' },
+  beef_steak: { t_target: 54, t_init: 5, thickness: 30, delta_t: 3, label: 'Beef Steak (Medium-Rare)' },
   salmon: { t_target: 46, t_init: 5, thickness: 25, delta_t: 1, label: 'Salmon' },
-  chicken: { t_target: 64, t_init: 5, thickness: 25, delta_t: 1, label: 'Chicken Breast' },
+  chicken: { t_target: 61, t_init: 5, thickness: 25, delta_t: 1, label: 'Chicken Breast' },
 };
 
 function applyPreset(name) {
